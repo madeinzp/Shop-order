@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Прайс-лист</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Geologica:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f5f3ef;--surface:#fff;--surface2:#eeece8;--accent:#2d6a4f;--al:#e8f4ee;--a2:#74c69d;--danger:#e63946;--warn:#e07b39;--text:#1a1a1a;--muted:#88887f;--border:#e0ddd7;--r:14px}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{font-family:'Geologica',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+.hdr{position:sticky;top:0;z-index:100;background:var(--surface);border-bottom:1.5px solid var(--border);padding:11px 14px;display:flex;align-items:center;gap:10px}
+.hdr-logo{font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:600;color:var(--accent);background:var(--al);padding:4px 9px;border-radius:6px}
+.hdr-title{font-size:14px;font-weight:600;flex:1}
+.hdr-pill{display:none;align-items:center;gap:5px;background:var(--accent);color:#fff;border:none;border-radius:20px;padding:6px 12px;font-size:12px;font-weight:600;font-family:'Geologica',sans-serif;cursor:pointer;transition:transform .15s}
+.hdr-pill:active{transform:scale(.94)}
+.hdr-pill-n{background:rgba(255,255,255,.22);border-radius:10px;padding:1px 6px;font-size:10px}
+.top-bar{padding:10px 14px 0}
+.search-box{width:100%;background:var(--surface);border:1.5px solid var(--border);border-radius:10px;padding:9px 12px 9px 36px;font-size:14px;font-family:'Geologica',sans-serif;color:var(--text);outline:none;transition:border-color .2s;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='15' height='15' fill='none' stroke='%23999' stroke-width='2' viewBox='0 0 24 24'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.35-4.35'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:11px center}
+.search-box:focus{border-color:var(--accent)}
+.cats{padding:8px 14px;display:flex;gap:6px;overflow-x:auto;scrollbar-width:none}
+.cats::-webkit-scrollbar{display:none}
+.cat-btn{white-space:nowrap;flex-shrink:0;background:var(--surface);border:1.5px solid var(--border);border-radius:20px;padding:6px 13px;font-size:11px;font-weight:500;font-family:'Geologica',sans-serif;color:var(--muted);cursor:pointer;transition:all .18s}
+.cat-btn.active{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+.stats{margin:0 14px 8px;background:var(--surface);border:1.5px solid var(--border);border-radius:10px;padding:8px 13px;display:flex;align-items:center;justify-content:space-between;font-size:11px;color:var(--muted)}
+.stats b{color:var(--text)}.stats-sel{color:var(--accent);font-weight:600;display:none}
+.list{padding:0 14px 130px;display:flex;flex-direction:column;gap:7px}
+.row{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r);display:flex;align-items:center;gap:10px;padding:10px 11px;transition:border-color .18s,background .18s;animation:fi .22s ease both}
+.row.sel{border-color:var(--a2);background:var(--al)}.row.no-stock{opacity:.4;pointer-events:none}
+@keyframes fi{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+.rinfo{flex:1;min-width:0}.rname{font-size:13px;font-weight:500;line-height:1.32;margin-bottom:3px}
+.rmeta{display:flex;gap:7px;align-items:center}
+.rcat{font-size:10px;color:var(--muted);background:var(--surface2);padding:2px 7px;border-radius:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px}
+.rstk{font-size:10px;font-family:'JetBrains Mono',monospace;font-weight:600;white-space:nowrap}
+.rstk.ok{color:var(--accent)}.rstk.low{color:var(--warn)}.rstk.zero{color:var(--danger)}
+.qwrap{display:flex;align-items:center;flex-shrink:0}
+.qbtn{width:30px;height:30px;background:var(--surface2);border:1.5px solid var(--border);color:var(--text);font-size:17px;font-weight:300;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;user-select:none}
+.qbtn:first-child{border-radius:7px 0 0 7px}.qbtn:last-child{border-radius:0 7px 7px 0}
+.qbtn:active{background:var(--accent);border-color:var(--accent);color:#fff}
+.qinp{width:42px;height:30px;border:1.5px solid var(--border);border-left:none;border-right:none;background:var(--surface);text-align:center;font-size:13px;font-weight:600;font-family:'JetBrains Mono',monospace;color:var(--text);outline:none}
+.qinp:focus{background:var(--al)}
+.sel .qbtn{border-color:var(--a2);background:var(--al)}.sel .qinp{border-color:var(--a2);background:#fff;color:var(--accent)}
+.bar{position:fixed;bottom:0;left:0;right:0;z-index:200;background:var(--surface);border-top:1.5px solid var(--border);padding:10px 14px calc(10px + env(safe-area-inset-bottom));display:none}
+.bar-info{font-size:11px;color:var(--muted);text-align:center;margin-bottom:8px}.bar-info b{color:var(--accent)}
+.bar-btns{display:flex;gap:8px}
+.bar-dl,.bar-rev{flex:1;padding:13px;border-radius:11px;font-size:13px;font-weight:600;font-family:'Geologica',sans-serif;cursor:pointer;border:none;transition:opacity .15s}
+.bar-dl{background:var(--surface2);border:1.5px solid var(--border);color:var(--text)}.bar-rev{background:var(--accent);color:#fff}
+.bar-dl:active,.bar-rev:active{opacity:.8}
+.moverlay{position:fixed;inset:0;background:rgba(0,0,0,.48);z-index:300;display:flex;align-items:flex-end;opacity:0;pointer-events:none;transition:opacity .25s}
+.moverlay.open{opacity:1;pointer-events:all}
+.modal{background:var(--surface);border-radius:20px 20px 0 0;width:100%;max-height:88vh;overflow-y:auto;transform:translateY(100%);transition:transform .3s cubic-bezier(.32,.72,0,1);padding:18px 14px calc(18px + env(safe-area-inset-bottom))}
+.moverlay.open .modal{transform:translateY(0)}
+.mhandle{width:38px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 14px}
+.mtitle{font-size:16px;font-weight:700;margin-bottom:2px}.msub{font-size:12px;color:var(--muted);margin-bottom:14px}
+.mcat-title{font-size:11px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.5px;padding:10px 0 5px;border-bottom:1px solid var(--al)}
+.mrow{display:flex;justify-content:space-between;align-items:baseline;padding:7px 0;border-bottom:1px solid var(--border);gap:10px}
+.mrow:last-child{border-bottom:none}.mrow-name{font-size:12px;flex:1;line-height:1.3}
+.mrow-qty{font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;color:var(--accent);white-space:nowrap}
+.mbtns{display:flex;gap:8px;margin-top:14px}
+.mbtn{flex:1;padding:13px;border-radius:11px;font-size:13px;font-weight:600;font-family:'Geologica',sans-serif;cursor:pointer;border:none;transition:opacity .15s}
+.mbtn:active{opacity:.8}.mbtn-out{background:var(--surface2);border:1.5px solid var(--border);color:var(--text)}.mbtn-pri{background:var(--accent);color:#fff}
+.sover{position:fixed;inset:0;background:var(--bg);z-index:400;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px;opacity:0;pointer-events:none;transition:opacity .3s}
+.sover.show{opacity:1;pointer-events:all}
+.sico{font-size:60px;margin-bottom:14px;animation:pop .4s ease}.stitle{font-size:20px;font-weight:700;margin-bottom:8px;text-align:center}.ssub{font-size:13px;color:var(--muted);text-align:center;line-height:1.6}
+@keyframes pop{0%{transform:scale(0)}70%{transform:scale(1.15)}100%{transform:scale(1)}}
+.empty{text-align:center;padding:50px 20px;color:var(--muted);font-size:13px}.empty .ico{font-size:36px;margin-bottom:10px}
+.loading{text-align:center;padding:60px 20px;color:var(--muted);font-size:14px}
+</style>
+</head>
+<body>
+<div class="hdr">
+  <div class="hdr-logo">ПРАЙС</div>
+  <div class="hdr-title">Оформлення замовлення</div>
+  <button class="hdr-pill" id="pill" onclick="openModal()">🛒 <span class="hdr-pill-n" id="pillN">0</span></button>
+</div>
+<div class="top-bar"><input class="search-box" id="srch" placeholder="Пошук товару..." oninput="render()" autocomplete="off"></div>
+<div class="cats" id="cats"></div>
+<div class="stats" id="stats">
+  <span>Показано: <b id="stn">0</b></span>
+  <span class="stats-sel" id="stsel">✓ Обрано: <b id="stselN">0</b> поз.</span>
+</div>
+<div class="list" id="list"><div class="loading">Завантаження товарів...</div></div>
+<div class="bar" id="bar">
+  <div class="bar-info">Обрано: <b id="barPos">0</b> поз. · Загалом: <b id="barTot">0</b> шт.</div>
+  <div class="bar-btns">
+    <button class="bar-dl" onclick="downloadCSV()">⬇ Excel</button>
+    <button class="bar-rev" onclick="openModal()">Переглянути →</button>
+  </div>
+</div>
+<div class="moverlay" id="mo" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="mhandle"></div>
+    <div class="mtitle">Ваше замовлення</div>
+    <div class="msub" id="msub"></div>
+    <div id="mitems"></div>
+    <div class="mbtns">
+      <button class="mbtn mbtn-out" onclick="downloadCSV();closeModal()">⬇ Excel</button>
+      <button class="mbtn mbtn-pri" id="sendBtn" onclick="sendOrder()">✓ Відправити</button>
+    </div>
+  </div>
+</div>
+<div class="sover" id="sover">
+  <div class="sico">✅</div>
+  <div class="stitle">Замовлення відправлено!</div>
+  <div class="ssub">Менеджер отримав ваше замовлення<br>та зв'яжеться з вами найближчим часом.</div>
+</div>
+<script>
+// ← ЗАМІНІТЬ НА АДРЕСУ ВАШОГО NGROK (оновлювати щоразу при запуску ngrok)
+const SERVER = "https://NGROK_URL_HERE";
+
+const tg = window.Telegram?.WebApp;
+if(tg){tg.ready();tg.expand();}
+function hap(t="light"){try{tg?.HapticFeedback?.impactOccurred(t);}catch(e){}}
+
+let PRODUCTS = [];
+const order = {};
+let activeCat = "Усі";
+
+async function loadProducts(){
+  try{
+    const r = await fetch(SERVER+"/products");
+    PRODUCTS = await r.json();
+  } catch(e){
+    PRODUCTS = [];
+    document.getElementById("list").innerHTML='<div class="empty"><div class="ico">⚠️</div>Не вдалось завантажити товари.<br>Перевірте що бот запущений.</div>';
+    return;
+  }
+  renderCats(); render();
+}
+
+const ALL_CATS = () => ["Усі",...new Set(PRODUCTS.map(p=>p.cat))];
+function renderCats(){
+  document.getElementById("cats").innerHTML = ALL_CATS().map(c=>
+    `<button class="cat-btn${c===activeCat?" active":""}" onclick="setCat(\`${c.replace(/`/g,"\\`")}\`)">${c}</button>`
+  ).join("");
+}
+function setCat(c){activeCat=c;renderCats();render();}
+
+function render(){
+  const q=document.getElementById("srch").value.trim().toLowerCase();
+  const filtered=PRODUCTS.filter(p=>(activeCat==="Усі"||p.cat===activeCat)&&(!q||p.name.toLowerCase().includes(q)));
+  document.getElementById("stn").textContent=filtered.length;
+  const selN=Object.keys(order).length;
+  const stsel=document.getElementById("stsel");
+  if(selN>0){stsel.style.display="";document.getElementById("stselN").textContent=selN;}
+  else stsel.style.display="none";
+  const el=document.getElementById("list");
+  if(!filtered.length){el.innerHTML='<div class="empty"><div class="ico">🔍</div>Нічого не знайдено</div>';return;}
+  el.innerHTML=filtered.map((p,i)=>{
+    const qty=order[p.art]||0;
+    const sc=p.stock===0?"zero":p.stock<10?"low":"ok";
+    const st=p.stock===0?"✗ Немає":`${p.stock} шт.`;
+    return `<div class="row${qty>0?" sel":""}${p.stock===0?" no-stock":""}" id="r_${p.art}" style="animation-delay:${Math.min(i*.018,.28)}s">
+      <div class="rinfo">
+        <div class="rname">${p.name}</div>
+        <div class="rmeta"><span class="rcat">${p.cat}</span><span class="rstk ${sc}">${st}</span></div>
+      </div>
+      <div class="qwrap">
+        <button class="qbtn" onclick="chg('${p.art}',${p.stock},-1)">−</button>
+        <input class="qinp" type="number" min="0" max="${p.stock}" value="${qty||""}" placeholder="0"
+          oninput="inp(this,'${p.art}',${p.stock})" onblur="blr(this,'${p.art}')">
+        <button class="qbtn" onclick="chg('${p.art}',${p.stock},1)">+</button>
+      </div>
+    </div>`;
+  }).join("");
+}
+
+function chg(art,stock,d){
+  let v=(order[art]||0)+d; if(v<0)v=0; if(v>stock)v=stock;
+  setOrd(art,v); hap();
+  const row=document.getElementById("r_"+art);
+  if(row){row.querySelector(".qinp").value=v||"";row.classList.toggle("sel",v>0);}
+  updateBar();
+}
+function inp(el,art,stock){let v=parseInt(el.value)||0;if(v<0)v=0;if(v>stock){v=stock;el.value=v;}setOrd(art,v);const row=document.getElementById("r_"+art);if(row)row.classList.toggle("sel",v>0);updateBar();}
+function blr(el,art){const v=parseInt(el.value)||0;el.value=v||"";setOrd(art,v);}
+function setOrd(art,v){if(v<=0)delete order[art];else order[art]=v;}
+
+function updateBar(){
+  const pos=Object.keys(order).length,tot=Object.values(order).reduce((s,v)=>s+v,0);
+  const bar=document.getElementById("bar"),pill=document.getElementById("pill");
+  if(pos>0){bar.style.display="";pill.style.display="flex";document.getElementById("barPos").textContent=pos;document.getElementById("barTot").textContent=tot;document.getElementById("pillN").textContent=pos;document.getElementById("stsel").style.display="";document.getElementById("stselN").textContent=pos;}
+  else{bar.style.display="none";pill.style.display="none";document.getElementById("stsel").style.display="none";}
+}
+
+function getItems(){
+  return Object.entries(order).map(([art,qty])=>{const p=PRODUCTS.find(x=>x.art===art)||{};return{art,name:p.name||art,cat:p.cat||"",stock:p.stock||0,qty};}).sort((a,b)=>a.cat.localeCompare(b.cat)||a.name.localeCompare(b.name));
+}
+
+function openModal(){
+  const items=getItems(),tot=items.reduce((s,i)=>s+i.qty,0);
+  document.getElementById("msub").textContent=`${items.length} позицій · ${tot} шт. загалом`;
+  const byCat={};items.forEach(i=>{(byCat[i.cat]||(byCat[i.cat]=[])).push(i);});
+  let html="";Object.keys(byCat).sort().forEach(cat=>{html+=`<div class="mcat-title">${cat}</div>`;byCat[cat].forEach(i=>{html+=`<div class="mrow"><span class="mrow-name">${i.name}</span><span class="mrow-qty">${i.qty} шт.</span></div>`;});});
+  document.getElementById("mitems").innerHTML=html;
+  document.getElementById("mo").classList.add("open");
+}
+function closeModal(){document.getElementById("mo").classList.remove("open");}
+
+async function sendOrder(){
+  const items=getItems();
+  if(!items.length) return;
+  const btn=document.getElementById("sendBtn");
+  btn.textContent="Надсилаємо..."; btn.disabled=true;
+  try{
+    const user=tg?.initDataUnsafe?.user||{};
+    const resp=await fetch(SERVER+"/order",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({items, total_qty:items.reduce((s,i)=>s+i.qty,0), user})
+    });
+    const result=await resp.json();
+    if(result.ok){
+      closeModal();
+      document.getElementById("sover").classList.add("show");
+      hap("success");
+      setTimeout(()=>{if(tg?.close)tg.close();},2600);
+    } else {
+      alert("Помилка: "+result.error);
+      btn.textContent="✓ Відправити"; btn.disabled=false;
+    }
+  } catch(e){
+    alert("Не вдалось надіслати. Перевірте підключення.");
+    btn.textContent="✓ Відправити"; btn.disabled=false;
+  }
+}
+
+function downloadCSV(){
+  const items=getItems();
+  let csv="\uFEFF"+"Найменування;Категорія;В наявності;Замовлення\r\n";
+  items.forEach(i=>{csv+=`"${i.name.replace(/"/g,'""')}";` +`"${i.cat.replace(/"/g,'""')}";`+`${i.stock};${i.qty}\r\n`;});
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8;"}));
+  a.download=`замовлення_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+}
+
+loadProducts();
+</script>
+</body>
+</html>
